@@ -61,6 +61,9 @@ def parse_args():
         '--local', '-l', action='store_true', default=False,
         help='If in a virtualenv that has global access, do not output '
              'globally-installed packages')
+    parser.add_argument(
+        metavar='package_name', dest='package_names', nargs='*',
+        help='Give a list of desired packages to be reviewed.')
     return parser.parse_args()
 
 
@@ -132,9 +135,9 @@ def get_latest_versions(pkg_names):
     return zip(pkg_names, versions)
 
 
-def get_installed_pkgs(local=False):
+def get_installed_pkgs(local=False, package_names=[]):
     logger = logging.getLogger(u'pip-review')
-    command = 'pip freeze'
+    command = 'pip freeze '
     if local:
         command += ' --local'
 
@@ -146,11 +149,15 @@ def get_installed_pkgs(local=False):
 
         if line.startswith('-e'):
             name = line.split('#egg=', 1)[1]
+            if package_names and name not in package_names:
+                continue
             if name.endswith('-dev'):
                 name = name[:-4]
             yield name, 'dev', 'dev', True
         else:
             name, version = line.split('==')
+            if package_names and name not in package_names:
+                continue
             yield name, parse_version(version), version, False
 
 
@@ -232,7 +239,8 @@ def main():
                        'Are you sure? [y/n] '):
             raise SystemExit('Quitting')
 
-    installed = list(get_installed_pkgs(local=args.local))
+    installed = list(get_installed_pkgs(local=args.local,
+                                        package_names=args.package_names))
     lookup_on_pypi = [name for name, _, _, editable in installed
                       if not editable or args.editables]
     latest_versions = dict(get_latest_versions(lookup_on_pypi))

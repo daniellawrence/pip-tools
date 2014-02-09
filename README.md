@@ -48,6 +48,13 @@ Upgrade now? [Y]es, [N]o, [A]ll, [Q]uit y
 ...
 ```
 
+Example, report-only selected packages:
+
+```console
+$ pip-review redis
+redis==2.4.13 available (you have 2.4.9)
+```
+
 
 pip-dump
 ========
